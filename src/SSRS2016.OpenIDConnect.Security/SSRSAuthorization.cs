@@ -21,6 +21,10 @@ namespace SSRS.OpenIDConnect.Security
 
         private bool UserMatchesPrincipal(string acePrincipal, IntPtr userToken)
         {
+            // No access without Identity
+            if (userToken == IntPtr.Zero)
+                return false;
+
             // initialize a pointer to the current identity
             var handle = GCHandle.FromIntPtr(userToken);
             var myIdentity = (ClaimsIdentity) handle.Target;

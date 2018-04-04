@@ -33,12 +33,16 @@ Here are the steps to identify or create all the settings you will need in subse
 
 Make sure you have a current version of the /Auth application. Only versions greater than [9.6.xxxx] support the SSRS pass-through authentication properly.  Earlier 9.6 versions will offer some support, but certain management functions (such as connecting via SSMS) will fail.
 
-Set the value in appsettings.json:
+Set these values in appsettings.json:
 
 ```js
 {
         "PEAuth":{
-                "SSRSIntegrationSecret":"{your-made-up-secret}"
+                "SSRSIntegrationSecret":"{your-made-up-secret}",
+                "AuthorizedSites: [
+                        ...
+                        "{url-to-reportserver-oidclogon.aspx}"
+                ]
         }
 }
 ```
@@ -52,7 +56,7 @@ Installing the Custom Authentication requires several manual steps.  Please foll
 1. Install and Configure Reporting Services 2016 (Normal Way)
 1. Verify Services are working (connect to Instance)
 1. Identify the Instance Source Directory (e.g. C:\Program Files\Microsoft SQL Server\MSRS13.SSRS\Reporting Services)
-1. Copy the /bin files to the following subdirectories Of the Instance:
+1. Copy the /bin files to both of the following subdirectories of the Instance.
     1. \ReportServer\bin
     1. \RSWebApp\bin
 1. Copy the oidclogon.aspx file

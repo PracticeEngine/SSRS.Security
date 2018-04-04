@@ -1,12 +1,14 @@
 ﻿using Microsoft.ReportingServices.Interfaces;
 using SSRS.OpenIDConnect.Security.PE;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Security.Principal;
+using System.Timers;
 using System.Web;
 using System.Xml;
 
@@ -14,6 +16,61 @@ namespace SSRS.OpenIDConnect.Security
 {
     public class SSRSAuthentication : IAuthenticationExtension2, IExtension
     {
+
+        #region Static IdentityManagement
+        /// <summary>
+        ///  Dictionary of GCHandles for Identities by Username
+        /// </summary>
+        static ConcurrentDictionary<string, GCHandle> staticIdentities = new ConcurrentDictionary<string, GCHandle>();
+
+        /// <summary>
+        /// List of when to Free the GCHandles
+        /// </summary>
+        static ConcurrentDictionary<string, DateTimeOffset> cleanUpList = new ConcurrentDictionary<string, DateTimeOffset>();
+
+        /// <summary>
+        /// Our Cleanup Timer
+        /// </summary>
+        static Timer cleanupTimer;
+
+        /// <summary>
+        /// Static Constructor to setup our Cleanup Timer
+        /// </summary>
+        static SSRSAuthentication()
+        {
+            cleanupTimer = new Timer(TimeSpan.FromMinutes(15).TotalMilliseconds);
+
+            cleanupTimer.AutoReset = true;
+            cleanupTimer.Elapsed += CleanupTimer_Elapsed;
+            cleanupTimer.Start();
+        }
+
+        /// <summary>
+        /// Cleanup Event - Free Unused Identities
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private static void CleanupTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            foreach(var cleanUp in cleanUpList)
+            {
+                if (cleanUp.Value < DateTimeOffset.Now)
+                {
+                    // Remove the Idenity and Free the Handle so GC can Happen
+                    GCHandle handle;
+                    if (staticIdentities.TryRemove(cleanUp.Key, out handle)) {
+                        handle.Free();
+                    }
+
+                    // Ensure the Item is removed from the cleanup list
+                    DateTimeOffset expires;
+                    cleanUpList.TryRemove(cleanUp.Key, out expires);
+                }
+            }
+        }
+
+        #endregion Static IdentityManagement
+
         // Configuration Items (read from rsreportserver.config Configuration File)
         private string m_oidcAuthority;
         private string m_peAppUrl;
@@ -37,21 +94,15 @@ namespace SSRS.OpenIDConnect.Security
                   && HttpContext.Current.User != null)
             {
                 // This is the custom bit - Create a Custom PE Identity
-                userIdentity = CreatePEIdentity(HttpContext.Current.User.Identity.Name);
+                var handle = GetIdentityHandle(HttpContext.Current.User.Identity.Name);
+                userIdentity = (ClaimsIdentity)handle.Target;
+                userId = GCHandle.ToIntPtr(handle);
             }
             else
-            // The current user identity is null. This happens when the user attempts an anonymous logon.
-            // Although it is ok to return userIdentity as a null reference, it is best to throw an appropriate
-            // exception for debugging purposes.
-            // To configure for anonymous logon, return a Gener
             {
-                //System.Diagnostics.Debug.Assert(false, "Warning: userIdentity is null! Modify your code if you wish to support anonymous logon.");
-                throw new NullReferenceException("Anonymous logon is not configured. userIdentity should not be null!");
+                userIdentity = null;
+                userId = IntPtr.Zero;
             }
-
-            // initialize a pointer to the current identity
-            var handle = GCHandle.Alloc(userIdentity);
-            userId = GCHandle.ToIntPtr(handle);
         }
 
         public void GetUserInfo(IRSRequestContext requestContext, out IIdentity userIdentity, out IntPtr userId)
@@ -60,12 +111,15 @@ namespace SSRS.OpenIDConnect.Security
             if (requestContext.User != null)
             {
                 // This is the custom bit - Create a Custom PE Identity
-                userIdentity = CreatePEIdentity(requestContext.User.Name);
+                var handle = GetIdentityHandle(requestContext.User.Name);
+                userIdentity = (ClaimsIdentity)handle.Target;
+                userId = GCHandle.ToIntPtr(handle);
             }
-
-            // initialize a pointer to the current identity
-            var handle = GCHandle.Alloc(userIdentity);
-            userId = GCHandle.ToIntPtr(handle);
+            else
+            {
+                userIdentity = null;
+                userId = IntPtr.Zero;
+            }
         }
 
         /// <summary>
@@ -132,7 +186,36 @@ namespace SSRS.OpenIDConnect.Security
         }
 
         /// <summary>
-        /// Creates a PE Identity from a Username
+        /// Returns a Handle whose Target is the Identity for the User
+        /// </summary>
+        /// <param name="username">Name of the user to get Identity For</param>
+        /// <returns>Handle whose Target is a ClaimsIdentity</returns>
+        private GCHandle GetIdentityHandle(string username)
+        {
+            GCHandle handle;
+            if (!staticIdentities.TryGetValue(username, out handle))
+            {
+                // Create an Identity
+                var identity = CreatePEIdentity(username);
+                handle = GCHandle.Alloc(identity);
+                if (!staticIdentities.TryAdd(username, handle))
+                {
+                    // Someone else beat us to it - destroy this handle and the the one already there
+                    if (!staticIdentities.TryGetValue(username, out handle))
+                    {
+                        throw new Exception("Unsupported Race Situation has occurred retrieving identity");
+                    }
+                }
+            }
+
+            // Make sure Expires is updated to 10 minutes from now
+            var expiresAt = DateTimeOffset.Now.AddMinutes(10);
+            cleanUpList.AddOrUpdate(username, expiresAt, (un, dt) => expiresAt);
+            return handle;
+        }
+
+        /// <summary>
+        /// Creates a PE Identity from a Username - nOt to be called from IAuthenticationExtension2 Methods
         /// </summary>
         /// <param name="username">The Username to Create an Identity For</param>
         /// <returns>ClaimsIdenity with Name and Roles</returns>

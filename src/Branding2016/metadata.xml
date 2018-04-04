@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>  
+<SystemResourcePackage xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/systemresourcepackagemetadata"  
+    type="UniversalBrand"  
+    version="2.0.2"  
+    name="PE Brand"  
+    >  
+    <Contents>  
+        <Item key="colors" path="colors.json" />  
+        <Item key="logo" path="logo.png" />  
+    </Contents>  
+</SystemResourcePackage>

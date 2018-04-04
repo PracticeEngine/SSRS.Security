@@ -1,0 +1,91 @@
+{  
+    "name":"PE Brand",  
+    "version":"1.0",  
+    "interface":{  
+        "primary":"#ff9919",  
+        "primaryAlt":"#e58916",  
+        "primaryAlt2":"#cc7a14",  
+        "primaryAlt3":"#b26b11",  
+        "primaryAlt4":"#995b0f",  
+        "primaryContrast":"#fff",  
+
+        "secondary":"#2e8599",  
+        "secondaryAlt":"#4291a3",  
+        "secondaryAlt2":"#579dad",  
+        "secondaryAlt3":"#6ca9b7",  
+        "secondaryContrast":"#040d0f",  
+
+        "neutralPrimary":"#d8edff",  
+        "neutralPrimaryAlt":"#c9e6ff",  
+        "neutralPrimaryAlt2":"#aedaff",  
+        "neutralPrimaryAlt3":"#88c8ff",  
+        "neutralPrimaryContrast":"#0a2b4c",  
+
+        "neutralSecondary":"#e9d8eb",  
+        "neutralSecondaryAlt":"#d9badc",  
+        "neutralSecondaryAlt2":"#b06cb5",  
+        "neutralSecondaryAlt3":"#a75bac",  
+        "neutralSecondaryContrast":"#250a26",  
+
+        "neutralTertiary":"#f79220",  
+        "neutralTertiaryAlt":"#f8a54b",  
+        "neutralTertiaryAlt2":"#facc9b",  
+        "neutralTertiaryAlt3":"#fce3c7",  
+        "neutralTertiaryContrast":"#391d00",  
+
+        "danger":"#b20000",  
+        "success":"#00b200",  
+        "warning":"#b25f00",  
+        "info":"#768799",  
+        "dangerContrast":"#fff",  
+        "successContrast":"#fff",  
+        "warningContrast":"#fff",  
+        "infoContrast":"#fff",  
+
+        "kpiGood":"#4fb443",  
+        "kpiBad":"#de061a",  
+        "kpiNeutral":"#d9b42c",  
+        "kpiNone":"#333",  
+        "kpiGoodContrast":"#fff",  
+        "kpiBadContrast":"#fff",  
+        "kpiNeutralContrast":"#fff",  
+        "kpiNoneContrast":"#fff"  
+       },  
+       "theme":{  
+        "dataPoints":[  
+            "#0072c6",  
+            "#f68c1f",  
+            "#269657",  
+            "#dd5900",  
+            "#5b3573",  
+            "#22bdef",  
+            "#b4009e",  
+            "#008274",  
+            "#fdc336",  
+            "#ea3c00",  
+            "#00188f",  
+            "#9f9f9f"  
+        ],  
+
+        "good":"#85ba00",  
+        "bad":"#e90000",  
+        "neutral":"#edb327",  
+        "none":"#333",  
+
+        "background":"#fff",  
+        "foreground":"#222",  
+        "mapBase":"#00aeef",  
+        "panelBackground":"#f6f6f6",  
+        "panelForeground":"#222",  
+        "panelAccent":"#00aeef",  
+        "tableAccent":"#00aeef",  
+
+        "altBackground":"#f6f6f6",  
+        "altForeground":"#000",  
+        "altMapBase":"#f68c1f",  
+        "altPanelBackground":"#235378",  
+        "altPanelForeground":"#fff",  
+        "altPanelAccent":"#fdc336",  
+        "altTableAccent":"#fdc336"  
+    }  
+}
