@@ -17,7 +17,7 @@ namespace SSRS.OpenIDConnect.Security.Tests.OIDC
         {
             var oidcUtils = new OIDCUtilities(new Uri(authURL));
 
-            var auth = oidcUtils.BuildAuthorizeUrl("test");
+            var auth = oidcUtils.BuildAuthorizeUrl("test", "https://local.com/callme");
 
             var parser = new UriBuilder(auth);
             Assert.AreEqual("https", parser.Scheme);
@@ -30,7 +30,7 @@ namespace SSRS.OpenIDConnect.Security.Tests.OIDC
         {
             var oidcUtils = new OIDCUtilities(new Uri(authURL));
 
-            var auth = oidcUtils.BuildAuthorizeUrl("test");
+            var auth = oidcUtils.BuildAuthorizeUrl("test", "https://local.com/callme");
 
             var parser = new UriBuilder(auth);
             var values = System.Web.HttpUtility.ParseQueryString(parser.Query);

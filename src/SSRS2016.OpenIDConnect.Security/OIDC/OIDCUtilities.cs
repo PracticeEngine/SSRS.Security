@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Net;
 using System.Runtime.Caching;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -31,6 +32,10 @@ namespace SSRS.OpenIDConnect.Security.OIDC
         public OIDCUtilities(Uri authUri)
         {
             m_authUri = authUri;
+
+#if DEBUG
+            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+#endif
         }
 
         /// <summary>
@@ -41,8 +46,11 @@ namespace SSRS.OpenIDConnect.Security.OIDC
         {
             if (!MemoryCache.Default.Contains(CACHE_DISCO))
             {
-                var disco = DiscoveryClient.GetAsync(m_authUri.AbsoluteUri);
-                MemoryCache.Default.Add(CACHE_DISCO, disco.Result, DateTimeOffset.Now.AddHours(2));
+                var disco = DiscoveryClient.GetAsync(m_authUri.AbsoluteUri).Result;
+                if (disco.IsError)
+                    throw new NullReferenceException("OIDC Discovery Failed!  Is the Authentication App running?");
+
+                MemoryCache.Default.Add(CACHE_DISCO, disco, DateTimeOffset.Now.AddHours(2));
             }
 
             return MemoryCache.Default[CACHE_DISCO] as DiscoveryResponse;
@@ -52,7 +60,7 @@ namespace SSRS.OpenIDConnect.Security.OIDC
         /// Builds a Login Uri to redirect the user for login
         /// </summary>
         /// <returns></returns>
-        public string BuildAuthorizeUrl(string state)
+        public string BuildAuthorizeUrl(string state, string callback)
         {
             var nonce = Guid.NewGuid().ToString("N");
             MemoryCache.Default.Add(nonce, nonce, DateTimeOffset.Now.AddMinutes(10));
@@ -61,7 +69,7 @@ namespace SSRS.OpenIDConnect.Security.OIDC
                 clientId: "pe.app",
                 responseType: "id_token",
                 scope: "openid profile",
-                redirectUri: "http://localhost:44078/home/callback",
+                redirectUri: callback,
                 state: state,
                 nonce: nonce,
                 responseMode: "form_post");

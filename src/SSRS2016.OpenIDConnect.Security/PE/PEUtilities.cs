@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Runtime.Caching;
 using System.Text;
@@ -19,24 +20,32 @@ namespace SSRS.OpenIDConnect.Security.PE
         const string CACHE_TOKEN = "PE.CACHE.TOKEN";
         const string CACHE_GROUPS = "PE.CACHE.GROUPS";
         const string CACHE_PEUSER = "PE.USER.{0}";
+        const string CACHE_USER_TOKEN = "PE.USER.TOKEN.{0}";
 
 
         // Connection Details for our API
-        private string m_peUrl;
+        private string m_peAuthUrl;
+        private string m_peAppUrl;
         private string m_peAppID;
         private string m_peAppKey;
+        private string m_peIntegrationSecret;
 
         /// <summary>
         /// Constructs a Helper Class to Query the PE Api
         /// </summary>
-        /// <param name="Url">URL to a PE instance</param>
+        /// <param name="AuthUrl">URL to a PE instance</param>
         /// <param name="AppID">App ID Setup for this purpose</param>
         /// <param name="AppKey">App Key setup for this purpose</param>
-        public PEUtilities(string Url, string AppID, string AppKey)
+        public PEUtilities(string AuthUrl, string AppUrl, string AppID, string AppKey, string IntegrationSecret)
         {
-            m_peUrl = Url;
+#if DEBUG
+            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+#endif
+            m_peAuthUrl = AuthUrl;
+            m_peAppUrl = AppUrl;
             m_peAppID = AppID;
             m_peAppKey = AppKey;
+            m_peIntegrationSecret = IntegrationSecret;
         }
 
         /// <summary>
@@ -47,11 +56,11 @@ namespace SSRS.OpenIDConnect.Security.PE
         {
             if (!MemoryCache.Default.Contains(CACHE_DISCO))
             { 
-                var urlBuilder = new UriBuilder(m_peUrl);
-                urlBuilder.Path = "/auth";
-                urlBuilder.Query = null;
-                var disco = DiscoveryClient.GetAsync(urlBuilder.Uri.AbsoluteUri);
-                MemoryCache.Default.Add(CACHE_DISCO, disco.Result, DateTimeOffset.Now.AddHours(2));
+                var disco = DiscoveryClient.GetAsync(m_peAuthUrl).Result;
+                if (disco.IsError)
+                    throw new NullReferenceException("OIDC Discovery Failed!  Is the Authentication App running?");
+
+                MemoryCache.Default.Add(CACHE_DISCO, disco, DateTimeOffset.Now.AddHours(2));
             }
 
             return MemoryCache.Default[CACHE_DISCO] as DiscoveryResponse;
@@ -63,15 +72,26 @@ namespace SSRS.OpenIDConnect.Security.PE
         /// <returns></returns>
         public TokenResponse GetApiToken()
         {
-            if (!MemoryCache.Default.Contains(CACHE_TOKEN))
-            {
-                var disco = DiscoverOidcSettings();
-                var tokenClient = new TokenClient(disco.TokenEndpoint, m_peAppID, m_peAppKey, style:AuthenticationStyle.PostValues);
-                var token = tokenClient.RequestClientCredentialsAsync("pe.api").Result;
-                MemoryCache.Default.Add(CACHE_TOKEN, token, DateTimeOffset.Now.AddSeconds((token.ExpiresIn-60)));
-            }
+            var disco = DiscoverOidcSettings();
+            var tokenClient = new TokenClient(disco.TokenEndpoint, m_peAppID, m_peAppKey, style: AuthenticationStyle.PostValues);
+            var token = tokenClient.RequestClientCredentialsAsync("pe.api").Result;
+            if (token.IsError)
+                throw new Exception("Failed to get Access Token from OIDC Endpoint");
+            return token;
+        }
 
-            return MemoryCache.Default[CACHE_TOKEN] as TokenResponse;
+        /// <summary>
+        /// Returns a Valid API Access Token
+        /// </summary>
+        /// <returns></returns>
+        public bool ValidateUserCredentials(string username, string password)
+        {
+            var disco = DiscoverOidcSettings();
+            var tokenClient = new TokenClient(disco.TokenEndpoint, "pe.ssrs", m_peIntegrationSecret, style: AuthenticationStyle.PostValues);
+            var token = tokenClient.RequestResourceOwnerPasswordAsync(username, password, scope: "pe.sqlreports").Result;
+            if (token.IsError)
+                return false;
+            return true;
         }
 
         /// <summary>
@@ -85,12 +105,16 @@ namespace SSRS.OpenIDConnect.Security.PE
                 var httpClient = new HttpClient();
                 var token = GetApiToken();
                 httpClient.SetBearerToken(token.AccessToken);
+                httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 
-                var urlBuilder = new UriBuilder(m_peUrl);
-                urlBuilder.Path = "/PE/api/Security/GetPermissionDetails";
+                var urlBuilder = new UriBuilder(m_peAppUrl);
+                urlBuilder.Path += "api/Security/GetPermissionDetails";
                 urlBuilder.Query = null;
 
-                var response = httpClient.PostAsync(urlBuilder.Uri.AbsoluteUri, new StringContent("")).Result;
+                var response = httpClient.PostAsync(urlBuilder.Uri.AbsoluteUri, new StringContent("", Encoding.UTF8, "appliation/json")).Result;
+                if (!response.IsSuccessStatusCode)
+                    throw new Exception(String.Format("HTTP Failure {0} - {1}", response.StatusCode, response.ReasonPhrase));
+
                 var json = response.Content.ReadAsStringAsync().Result;
                 var jobj = JObject.Parse(json);
                 var roles = jobj.Property("Roles").Value.Values<string>();
@@ -151,9 +175,10 @@ namespace SSRS.OpenIDConnect.Security.PE
                 var httpClient = new HttpClient();
                 var token = GetApiToken();
                 httpClient.SetBearerToken(token.AccessToken);
+                httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 
-                var urlBuilder = new UriBuilder(m_peUrl);
-                urlBuilder.Path = "/PE/api/Security/FindUsers";
+                var urlBuilder = new UriBuilder(m_peAppUrl);
+                urlBuilder.Path += "api/Security/FindUsers";
                 urlBuilder.Query = null;
 
                 // Build a Request

@@ -9,15 +9,17 @@ namespace SSRS.OpenIDConnect.Security.Tests.PE
     public class PEUtilitiesTests
     {
         // These Must be Set to Valid Values for the Integration Tests To Pass
-        string url = "https://pes.pehosted.com";
-        string appID = "87b2b36f245a4583aac5727c64b72082";
-        string appKey = "rbjt/RENS6ZF4qhxpEqzDHoju9iziw9W/GpEoTMsegc=";
+        string authUrl = "https://localhost:44357/";
+        string appUrl = "https://localhost:44333/PE/";
+        string appID = "cecbab46d3a6441aa6dcd3a058fa352a";
+        string appKey = "uSqw5Ub3ydj8FB6v1S280QXq5o1gPVmAMmCGi/MPkI4=";
+        string integrationSecret = "SSRS.Integration S#cret";
 
         [TestCategory("Integration")]
         [TestMethod]
         public void ListGroups_Returns_Data()
         {
-            var peutils = new PEUtilities(url, appID, appKey);
+            var peutils = new PEUtilities(authUrl, appUrl, appID, appKey, integrationSecret);
             var groups = peutils.ListAllGroups();
 
             Assert.IsTrue(groups.Count() > 0, "No Groups Returned");
@@ -27,7 +29,7 @@ namespace SSRS.OpenIDConnect.Security.Tests.PE
         [TestMethod]
         public void FindUser_Returns_Data()
         {
-            var peutils = new PEUtilities(url, appID, appKey);
+            var peutils = new PEUtilities(authUrl, appUrl, appID, appKey, integrationSecret);
             var hasUser = peutils.IsUserValid("ryan@praceng.us");
 
             Assert.IsTrue(hasUser, "No User Returned");
@@ -37,10 +39,20 @@ namespace SSRS.OpenIDConnect.Security.Tests.PE
         [TestMethod]
         public void List_UserGroups_Returns_Data()
         {
-            var peutils = new PEUtilities(url, appID, appKey);
+            var peutils = new PEUtilities(authUrl, appUrl, appID, appKey, integrationSecret);
             var groups = peutils.ListGroupsForUser("ryan@praceng.us");
 
             Assert.IsTrue(groups.Count() > 0, "No Groups Returned");
+        }
+
+        [TestCategory("Integration")]
+        [TestMethod]
+        public void Validate_UserCredentials_Works()
+        {
+            var peutils = new PEUtilities(authUrl, appUrl, appID, appKey, integrationSecret);
+            var isValid = peutils.ValidateUserCredentials("ryan@praceng.us", "password");
+
+            Assert.IsTrue(isValid, "User Not Validated");
         }
     }
 }

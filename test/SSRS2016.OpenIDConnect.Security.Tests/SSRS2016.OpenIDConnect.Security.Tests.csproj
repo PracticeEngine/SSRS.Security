@@ -62,9 +62,9 @@
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SSRS.OpenIDConnect.Security\SSRS.OpenIDConnect.Security.csproj">
+    <ProjectReference Include="..\..\src\SSRS2016.OpenIDConnect.Security\SSRS2016.OpenIDConnect.Security.csproj">
       <Project>{f9acaa61-ec47-47dc-8592-64c79e3b309f}</Project>
-      <Name>SSRS.OpenIDConnect.Security</Name>
+      <Name>SSRS2016.OpenIDConnect.Security</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />

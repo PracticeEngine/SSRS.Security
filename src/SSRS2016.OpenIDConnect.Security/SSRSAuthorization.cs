@@ -4,7 +4,9 @@ using System.Collections;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Security.Claims;
 using System.Xml;
 
 namespace SSRS.OpenIDConnect.Security
@@ -17,6 +19,14 @@ namespace SSRS.OpenIDConnect.Security
         /// </summary>
         private string m_adminUserName;
 
+        private bool UserMatchesPrincipal(string acePrincipal, IntPtr userToken)
+        {
+            // initialize a pointer to the current identity
+            var handle = GCHandle.FromIntPtr(userToken);
+            var myIdentity = (ClaimsIdentity) handle.Target;
+            return myIdentity.HasClaim(c => (c.Type == ClaimTypes.Name || c.Type == ClaimTypes.Role) && c.Value.Equals(acePrincipal, StringComparison.OrdinalIgnoreCase));
+        }
+
 
         #region IAuthorizationExtension Implementation 
 
@@ -24,7 +34,7 @@ namespace SSRS.OpenIDConnect.Security
         {
             get
             {
-                return "PE.SSRS.Authorization";
+                return null;
             }
         }
 
@@ -76,8 +86,7 @@ namespace SSRS.OpenIDConnect.Security
             {
                 // First check to see if the user or group has an access control 
                 //  entry for the item
-                if (0 == String.Compare(userName, ace.PrincipalName, true,
-                   CultureInfo.CurrentCulture))
+                if (UserMatchesPrincipal(ace.PrincipalName, userToken))
                 {
                     // If an entry is found, 
                     // return true if the given required operation
@@ -113,8 +122,7 @@ namespace SSRS.OpenIDConnect.Security
             {
                 // First check to see if the user or group has an access control 
                 //  entry for the item
-                if (0 == String.Compare(userName, ace.PrincipalName, true,
-                   CultureInfo.CurrentCulture))
+                if (UserMatchesPrincipal(ace.PrincipalName, userToken))
                 {
                     // If an entry is found, 
                     // return true if the given required operation
@@ -163,8 +171,7 @@ namespace SSRS.OpenIDConnect.Security
             {
                 // First check to see if the user or group has an access control 
                 //  entry for the item
-                if (0 == String.Compare(userName, ace.PrincipalName, true,
-                   CultureInfo.CurrentCulture))
+                if (UserMatchesPrincipal(ace.PrincipalName, userToken))
                 {
                     // If an entry is found, 
                     // return true if the given required operation
@@ -210,8 +217,7 @@ namespace SSRS.OpenIDConnect.Security
             AceCollection acl = DeserializeAcl(secDesc);
             foreach (AceStruct ace in acl)
             {
-                if (0 == String.Compare(userName, ace.PrincipalName, true,
-                   CultureInfo.CurrentCulture))
+                if (UserMatchesPrincipal(ace.PrincipalName, userToken))
                 {
                     foreach (ReportOperation aclOperation in
                        ace.ReportOperations)
@@ -239,8 +245,7 @@ namespace SSRS.OpenIDConnect.Security
             AceCollection acl = DeserializeAcl(secDesc);
             foreach (AceStruct ace in acl)
             {
-                if (0 == String.Compare(userName, ace.PrincipalName, true,
-                   CultureInfo.CurrentCulture))
+                if (UserMatchesPrincipal(ace.PrincipalName, userToken))
                 {
                     foreach (FolderOperation aclOperation in
                        ace.FolderOperations)
@@ -284,8 +289,7 @@ namespace SSRS.OpenIDConnect.Security
             AceCollection acl = DeserializeAcl(secDesc);
             foreach (AceStruct ace in acl)
             {
-                if (0 == String.Compare(userName, ace.PrincipalName, true,
-                   CultureInfo.CurrentCulture))
+                if (UserMatchesPrincipal(ace.PrincipalName, userToken))
                 {
                     foreach (ResourceOperation aclOperation in
                        ace.ResourceOperations)
@@ -334,8 +338,7 @@ namespace SSRS.OpenIDConnect.Security
             AceCollection acl = DeserializeAcl(secDesc);
             foreach (AceStruct ace in acl)
             {
-                if (0 == String.Compare(userName, ace.PrincipalName, true,
-                   CultureInfo.CurrentCulture))
+                if (UserMatchesPrincipal(ace.PrincipalName, userToken))
                 {
                     foreach (DatasourceOperation aclOperation in
                        ace.DatasourceOperations)
@@ -415,8 +418,7 @@ namespace SSRS.OpenIDConnect.Security
                 AceCollection acl = DeserializeAcl(secDesc);
                 foreach (AceStruct ace in acl)
                 {
-                    if (0 == String.Compare(userName, ace.PrincipalName, true,
-                          CultureInfo.CurrentCulture))
+                    if (UserMatchesPrincipal(ace.PrincipalName, userToken))
                     {
                         foreach (ModelItemOperation aclOperation in ace.ModelItemOperations)
                         {
@@ -467,6 +469,10 @@ namespace SSRS.OpenIDConnect.Security
 
         #region Supporting Static Methods (Adapated from MS Sample)
 
+        static SSRSAuthorization()
+        {
+            InitializeMaps();
+        }
 
         private static Hashtable m_ModelItemOperNames;
         private static Hashtable m_ModelOperNames;

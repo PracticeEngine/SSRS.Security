@@ -1,4 +1,4 @@
-﻿<%@ Page language="c#" Codebehind="oidc.aspx.cs" AutoEventWireup="false" Inherits="SSRS.OpenIDConnect.Security.OidcLogon, SSRS.OpenIDConnect.Security" Culture="auto" UICulture="auto" %>
+﻿<%@ Page language="c#" AutoEventWireup="false" Inherits="SSRS.OpenIDConnect.Security.OidcLogon, SSRS.OpenIDConnect.Security" Authority="https://localhost:44357/" Culture="auto" UICulture="auto" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>

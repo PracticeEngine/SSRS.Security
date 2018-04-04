@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Web;
@@ -15,15 +16,16 @@ namespace SSRS.OpenIDConnect.Security
     {
         // Configuration Items (read from rsreportserver.config Configuration File)
         private string m_oidcAuthority;
-        private string m_peUrl;
+        private string m_peAppUrl;
         private string m_peAppID;
         private string m_peAppKey;
+        private string m_peIntegrationSecret;
 
         public string LocalizedName
         {
             get
             {
-                return "PE.SSRS.Authentication";
+                return null;
             }
         }
 
@@ -47,8 +49,9 @@ namespace SSRS.OpenIDConnect.Security
                 throw new NullReferenceException("Anonymous logon is not configured. userIdentity should not be null!");
             }
 
-            // initialize a pointer to the current user id to zero
-            userId = IntPtr.Zero;
+            // initialize a pointer to the current identity
+            var handle = GCHandle.Alloc(userIdentity);
+            userId = GCHandle.ToIntPtr(handle);
         }
 
         public void GetUserInfo(IRSRequestContext requestContext, out IIdentity userIdentity, out IntPtr userId)
@@ -60,8 +63,9 @@ namespace SSRS.OpenIDConnect.Security
                 userIdentity = CreatePEIdentity(requestContext.User.Name);
             }
 
-            // initialize a pointer to the current user id to zero
-            userId = IntPtr.Zero;
+            // initialize a pointer to the current identity
+            var handle = GCHandle.Alloc(userIdentity);
+            userId = GCHandle.ToIntPtr(handle);
         }
 
         /// <summary>
@@ -71,14 +75,14 @@ namespace SSRS.OpenIDConnect.Security
         /// <returns></returns>
         public bool IsValidPrincipalName(string principalName)
         {
-            var peUtils = new PEUtilities(m_peUrl, m_peAppID, m_peAppKey);
+            var peUtils = new PEUtilities(m_oidcAuthority, m_peAppUrl, m_peAppID, m_peAppKey, m_peIntegrationSecret);
             return peUtils.ValidatePrincipal(principalName);
         }
 
         public bool LogonUser(string userName, string password, string authority)
         {
-            // Need to do this, so we can Consume WebService Methods
-            throw new NotImplementedException();
+            var peUtils = new PEUtilities(m_oidcAuthority, m_peAppUrl, m_peAppID, m_peAppKey, m_peIntegrationSecret);
+            return peUtils.ValidateUserCredentials(userName, password);
         }
 
         /// <summary>
@@ -91,17 +95,17 @@ namespace SSRS.OpenIDConnect.Security
             // and verify
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(configuration);
-            if (doc.DocumentElement.Name == "SiteConfiguration")
+            if (doc.DocumentElement.Name == "Authentication")
             {
                 foreach (XmlNode child in doc.DocumentElement.ChildNodes)
                 {
-                    if (child.Name == "Authority")
+                    if (child.Name == "PEUrl")
+                    {
+                        m_peAppUrl = child.InnerText;
+                    }
+                    else if (child.Name == "AuthUrl")
                     {
                         m_oidcAuthority = child.InnerText;
-                    }
-                    else if(child.Name == "PEUrl")
-                    {
-                        m_peUrl = child.InnerText;
                     }
                     else if (child.Name == "PEAppId")
                     {
@@ -111,16 +115,20 @@ namespace SSRS.OpenIDConnect.Security
                     {
                         m_peAppKey = child.InnerText;
                     }
+                    else if (child.Name == "SSRSIntegrationSecret")
+                    {
+                        m_peIntegrationSecret = child.InnerText;
+                    }
                     else
                     {
                         throw new Exception(string.Format(CultureInfo.InvariantCulture,
-                          "SiteConfiguration Contained a Node that was unexpected: {0}", child.Name));
+                          "Authentication Contained a Node that was unexpected: {0}", child.Name));
                     }
                 }
             }
             else
                 throw new Exception(string.Format(CultureInfo.InvariantCulture,
-                   "Missing SiteConfiguration, Got this Instead: {0}", doc.DocumentElement.Name));
+                   "Missing Authentication, Got this Instead: {0}", doc.DocumentElement.Name));
         }
 
         /// <summary>
@@ -132,14 +140,14 @@ namespace SSRS.OpenIDConnect.Security
         {
             // Create a Custom Identity
             var claims = new List<Claim>();
-            claims.Add(new Claim(ClaimTypes.Name, HttpContext.Current.User.Identity.Name));
-            var peUtils = new PEUtilities(m_peUrl, m_peAppID, m_peAppKey);
+            claims.Add(new Claim(ClaimTypes.Name, username));
+            var peUtils = new PEUtilities(m_oidcAuthority, m_peAppUrl, m_peAppID, m_peAppKey, m_peIntegrationSecret);
 
             // add PE Roles
-            var roles = peUtils.ListGroupsForUser(HttpContext.Current.User.Identity.Name);
+            var roles = peUtils.ListGroupsForUser(username);
             claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
-            return new ClaimsIdentity(claims, "custom");
+            return new ClaimsIdentity(claims, "custom", ClaimTypes.Name, ClaimTypes.Role);
         }
     }
 }
