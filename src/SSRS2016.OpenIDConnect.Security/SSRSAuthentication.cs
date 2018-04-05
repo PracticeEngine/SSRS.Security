@@ -38,8 +38,7 @@ namespace SSRS.OpenIDConnect.Security
         /// </summary>
         static SSRSAuthentication()
         {
-            cleanupTimer = new Timer(TimeSpan.FromMinutes(15).TotalMilliseconds);
-
+            cleanupTimer = new Timer(TimeSpan.FromMinutes(1).TotalMilliseconds);
             cleanupTimer.AutoReset = true;
             cleanupTimer.Elapsed += CleanupTimer_Elapsed;
             cleanupTimer.Start();
@@ -78,6 +77,7 @@ namespace SSRS.OpenIDConnect.Security
         private string m_peAppKey;
         private string m_peIntegrationSecret;
 
+
         public string LocalizedName
         {
             get
@@ -93,6 +93,7 @@ namespace SSRS.OpenIDConnect.Security
             if (HttpContext.Current != null
                   && HttpContext.Current.User != null)
             {
+
                 // This is the custom bit - Create a Custom PE Identity
                 var handle = GetIdentityHandle(HttpContext.Current.User.Identity.Name);
                 userIdentity = (ClaimsIdentity)handle.Target;
@@ -100,6 +101,7 @@ namespace SSRS.OpenIDConnect.Security
             }
             else
             {
+                // No Anonymous Access
                 userIdentity = null;
                 userId = IntPtr.Zero;
             }
@@ -117,6 +119,7 @@ namespace SSRS.OpenIDConnect.Security
             }
             else
             {
+                // No Anonymous Access
                 userIdentity = null;
                 userId = IntPtr.Zero;
             }
@@ -133,10 +136,30 @@ namespace SSRS.OpenIDConnect.Security
             return peUtils.ValidatePrincipal(principalName);
         }
 
+        /// <summary>
+        /// Supports WebService Logins (via SSMS or calling the .asmx Web Services)
+        /// </summary>
+        /// <param name="userName">Username for the User</param>
+        /// <param name="password">Password to verify with the Open Id Provider</param>
+        /// <param name="authority">Not used if password is provided.  If no password is empty, a valid OIDC AccessToken can be sent here</param>
+        /// <returns></returns>
         public bool LogonUser(string userName, string password, string authority)
         {
-            var peUtils = new PEUtilities(m_oidcAuthority, m_peAppUrl, m_peAppID, m_peAppKey, m_peIntegrationSecret);
-            return peUtils.ValidateUserCredentials(userName, password);
+            // Support Basic Password Authentication
+            if (!String.IsNullOrWhiteSpace(userName) && !String.IsNullOrWhiteSpace(password))
+            {
+                var peUtils = new PEUtilities(m_oidcAuthority, m_peAppUrl, m_peAppID, m_peAppKey, m_peIntegrationSecret);
+                return peUtils.ValidateUserCredentials(userName, password);
+            }
+            // Also support passing in a validatable token as Authority
+            if (!String.IsNullOrWhiteSpace(userName) && !String.IsNullOrWhiteSpace(authority))
+            {
+                var oidcUtils = new OIDC.OIDCUtilities(new Uri(m_oidcAuthority));
+                // Do not validate the Nonce as this was not an interactive login
+                var principal = oidcUtils.ValidateIdentityToken(authority, false);
+                return userName.Equals(principal.Identity.Name);
+            }
+            return false;
         }
 
         /// <summary>

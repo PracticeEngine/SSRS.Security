@@ -81,13 +81,14 @@ namespace SSRS.OpenIDConnect.Security.OIDC
         /// Validates an Identity Token
         /// </summary>
         /// <param name="idToken">The Received ID Token</param>
+        /// <param name="NonceValidate">Validate Nonce - only works if Token was created from redirect after call to <see cref="BuildAuthorizeUrl(string, string)">BuildAuthorizeUrl</see>/></param>
         /// <returns></returns>
-        public ClaimsPrincipal ValidateIdentityToken(string idToken)
+        public ClaimsPrincipal ValidateIdentityToken(string idToken, bool NonceValidate = true)
         {
             var user = ValidateJwt(idToken);
 
             var nonce = user.FindFirst("nonce")?.Value ?? "";
-            if (MemoryCache.Default[nonce] as string != nonce)
+            if (NonceValidate && MemoryCache.Default[nonce] as string != nonce)
                 throw new Exception("invalid nonce");
 
             return user;

@@ -51,6 +51,10 @@ Set these values in appsettings.json:
 
 Installing the Custom Authentication requires several manual steps.  Please follow these instructions carefully.  Please note these are only for SSRS 2016.
 
+Important Notes:
+
+* Install SQL Server 2016 SP1 with the latest Cumulative Update - without CU2 or higher, [this issue](https://support.microsoft.com/en-us/help/4013248/fix-user-authentication-failure-in-ssrs-2016-due-to-report-server-web) prevents reports from opening properly on first install.
+
 ### Copy Files
 
 1. Install and Configure Reporting Services 2016 (Normal Way)

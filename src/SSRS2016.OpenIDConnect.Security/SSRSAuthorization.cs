@@ -7,6 +7,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Claims;
+using System.Security.Principal;
 using System.Xml;
 
 namespace SSRS.OpenIDConnect.Security
@@ -18,6 +19,17 @@ namespace SSRS.OpenIDConnect.Security
         /// This is a Default Administrator account (from the rsreportserver.config Configuration File)
         /// </summary>
         private string m_adminUserName;
+
+        private bool HasUnRestrictedAccess(string userName)
+        {
+            // Allow the Configured Admin User Unrestricted Access
+            if (0 ==  String.Compare(userName, m_adminUserName, true,
+                  CultureInfo.CurrentCulture))
+                return true;
+
+            // All others Are Not Unstricted
+            return false;
+        }
 
         private bool UserMatchesPrincipal(string acePrincipal, IntPtr userToken)
         {
@@ -81,8 +93,7 @@ namespace SSRS.OpenIDConnect.Security
             // perform a case insensitive comparison. Ideally you would check
             // the SQL Server instance CaseSensitivity property before making
             // a case-insensitive comparison.
-            if (0 == String.Compare(userName, m_adminUserName, true,
-                  CultureInfo.CurrentCulture))
+            if (HasUnRestrictedAccess(userName))
                 return true;
 
             AceCollection acl = DeserializeAcl(secDesc);
@@ -117,8 +128,7 @@ namespace SSRS.OpenIDConnect.Security
             // perform a case insensitive comparison. Ideally you would check
             // the SQL Server instance CaseSensitivity property before making
             // a case-insensitive comparison.
-            if (0 == String.Compare(userName, m_adminUserName, true,
-                  CultureInfo.CurrentCulture))
+            if (HasUnRestrictedAccess(userName))
                 return true;
 
             AceCollection acl = DeserializeAcl(secDesc);
@@ -166,8 +176,7 @@ namespace SSRS.OpenIDConnect.Security
             // perform a case insensitive comparison. Ideally you would check
             // the SQL Server instance CaseSensitivity property before making
             // a case-insensitive comparison.
-            if (0 == String.Compare(userName, m_adminUserName, true,
-                  CultureInfo.CurrentCulture))
+            if (HasUnRestrictedAccess(userName))
                 return true;
 
             AceCollection acl = DeserializeAcl(secDesc);
@@ -214,8 +223,7 @@ namespace SSRS.OpenIDConnect.Security
            ReportOperation requiredOperation)
         {
             // If the user is the administrator, allow unrestricted access.
-            if (0 == String.Compare(userName, m_adminUserName, true,
-                  CultureInfo.CurrentCulture))
+            if (HasUnRestrictedAccess(userName))
                 return true;
 
             AceCollection acl = DeserializeAcl(secDesc);
@@ -242,8 +250,7 @@ namespace SSRS.OpenIDConnect.Security
            FolderOperation requiredOperation)
         {
             // If the user is the administrator, allow unrestricted access.
-            if (0 == String.Compare(userName, m_adminUserName, true,
-                  CultureInfo.CurrentCulture))
+            if (HasUnRestrictedAccess(userName))
                 return true;
 
             AceCollection acl = DeserializeAcl(secDesc);
@@ -286,8 +293,7 @@ namespace SSRS.OpenIDConnect.Security
            ResourceOperation requiredOperation)
         {
             // If the user is the administrator, allow unrestricted access.
-            if (0 == String.Compare(userName, m_adminUserName, true,
-                  CultureInfo.CurrentCulture))
+            if (HasUnRestrictedAccess(userName))
                 return true;
 
             AceCollection acl = DeserializeAcl(secDesc);
@@ -315,8 +321,7 @@ namespace SSRS.OpenIDConnect.Security
            ResourceOperation[] requiredOperations)
         {
             // If the user is the administrator, allow unrestricted access.
-            if (0 == String.Compare(userName, m_adminUserName, true,
-                  CultureInfo.CurrentCulture))
+            if (HasUnRestrictedAccess(userName))
                 return true;
 
             foreach (ResourceOperation operation in requiredOperations)
@@ -335,8 +340,7 @@ namespace SSRS.OpenIDConnect.Security
            DatasourceOperation requiredOperation)
         {
             // If the user is the administrator, allow unrestricted access.
-            if (0 == String.Compare(userName, m_adminUserName, true,
-                  CultureInfo.CurrentCulture))
+            if (HasUnRestrictedAccess(userName))
                 return true;
 
             AceCollection acl = DeserializeAcl(secDesc);
@@ -373,8 +377,7 @@ namespace SSRS.OpenIDConnect.Security
         public StringCollection GetPermissions(string userName, IntPtr userToken, SecurityItemType itemType, byte[] secDesc)
         {
             StringCollection permissions = new StringCollection();
-            if (0 == String.Compare(userName, m_adminUserName, true,
-                  CultureInfo.CurrentCulture))
+            if (HasUnRestrictedAccess(userName))
             {
                 foreach (CatalogOperation oper in m_CatOperNames.Keys)
                 {
