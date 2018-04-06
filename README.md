@@ -60,7 +60,7 @@ Important Notes:
 1. Install and Configure Reporting Services 2016 (Normal Way)
 1. Verify Services are working (connect to Instance)
 1. Identify the Instance Source Directory (e.g. C:\Program Files\Microsoft SQL Server\MSRS13.SSRS\Reporting Services)
-1. Copy the /bin files to both of the following subdirectories of the Instance.
+1. Copy the files from the BinDeploy.zip included here to both of the following subdirectories of the instance:
     1. \ReportServer\bin
     1. \RSWebApp\bin
 1. Copy the oidclogon.aspx file

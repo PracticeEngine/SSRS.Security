@@ -19,8 +19,6 @@ namespace SSRS.OpenIDConnect.Security.PE
         const string CACHE_DISCO = "PE.CACHE.DISCO";
         const string CACHE_TOKEN = "PE.CACHE.TOKEN";
         const string CACHE_GROUPS = "PE.CACHE.GROUPS";
-        const string CACHE_PEUSER = "PE.USER.{0}";
-        const string CACHE_USER_TOKEN = "PE.USER.TOKEN.{0}";
 
 
         // Connection Details for our API
@@ -72,12 +70,17 @@ namespace SSRS.OpenIDConnect.Security.PE
         /// <returns></returns>
         public TokenResponse GetApiToken()
         {
-            var disco = DiscoverOidcSettings();
-            var tokenClient = new TokenClient(disco.TokenEndpoint, m_peAppID, m_peAppKey, style: AuthenticationStyle.PostValues);
-            var token = tokenClient.RequestClientCredentialsAsync("pe.api").Result;
-            if (token.IsError)
-                throw new Exception("Failed to get Access Token from OIDC Endpoint");
-            return token;
+            if (!MemoryCache.Default.Contains(CACHE_TOKEN))
+            {
+                var disco = DiscoverOidcSettings();
+                var tokenClient = new TokenClient(disco.TokenEndpoint, m_peAppID, m_peAppKey, style: AuthenticationStyle.PostValues);
+                var token = tokenClient.RequestClientCredentialsAsync("pe.api").Result;
+                if (token.IsError)
+                    throw new Exception("Failed to get Access Token from OIDC Endpoint");
+                MemoryCache.Default.Add(CACHE_TOKEN, token, DateTimeOffset.Now.AddSeconds(token.ExpiresIn-5));
+            }
+
+            return MemoryCache.Default[CACHE_TOKEN] as TokenResponse;
         }
 
         /// <summary>
@@ -95,10 +98,10 @@ namespace SSRS.OpenIDConnect.Security.PE
         }
 
         /// <summary>
-        /// Returns a List of All Groups
+        /// Lists All Groups Available
         /// </summary>
         /// <returns></returns>
-        public JObject GetAdminDetails()
+        public IEnumerable<string> ListAllGroups()
         {
             if (!MemoryCache.Default.Contains(CACHE_GROUPS))
             {
@@ -108,7 +111,7 @@ namespace SSRS.OpenIDConnect.Security.PE
                 httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 
                 var urlBuilder = new UriBuilder(m_peAppUrl);
-                urlBuilder.Path += "api/Security/GetPermissionDetails";
+                urlBuilder.Path += "api/SSRS/GetAllRoles";
                 urlBuilder.Query = null;
 
                 var response = httpClient.PostAsync(urlBuilder.Uri.AbsoluteUri, new StringContent("", Encoding.UTF8, "appliation/json")).Result;
@@ -116,25 +119,12 @@ namespace SSRS.OpenIDConnect.Security.PE
                     throw new Exception(String.Format("HTTP Failure {0} - {1}", response.StatusCode, response.ReasonPhrase));
 
                 var json = response.Content.ReadAsStringAsync().Result;
-                var jobj = JObject.Parse(json);
-                var roles = jobj.Property("Roles").Value.Values<string>();
-
-
-                MemoryCache.Default.Add(CACHE_GROUPS, jobj, DateTimeOffset.Now.AddMinutes(5));
+                var rolesList = JArray.Parse(json);
+                var roles = rolesList.Values<string>();
+                MemoryCache.Default.Add(CACHE_GROUPS, roles, DateTimeOffset.Now.AddMinutes(5));
             }
 
-            return MemoryCache.Default[CACHE_GROUPS] as JObject;
-        }
-
-        /// <summary>
-        /// Lists All Groups Available
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<string> ListAllGroups()
-        {
-            var adminDetails = GetAdminDetails();
-            var roles = adminDetails.Property("Roles").Value.Values<string>();
-            return roles;
+            return MemoryCache.Default[CACHE_GROUPS] as IEnumerable<string>;
         }
 
         /// <summary>
@@ -144,14 +134,26 @@ namespace SSRS.OpenIDConnect.Security.PE
         /// <returns></returns>
         public IEnumerable<string> ListGroupsForUser(string username)
         {
-            var adminDetails = GetAdminDetails();
-            var roles = adminDetails.Property("RoleUsers").Value.Values<JObject>();
-            List<string> userRoles = new List<string>();
-            foreach(var role in roles)
+            var httpClient = new HttpClient();
+            var token = GetApiToken();
+            httpClient.SetBearerToken(token.AccessToken);
+            httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+            var urlBuilder = new UriBuilder(m_peAppUrl);
+            urlBuilder.Path += "api/SSRS/GetRolesForUser";
+            urlBuilder.Query = null;
+
+            var jsonData = JValue.CreateString(username).ToString(Newtonsoft.Json.Formatting.None);
+            var response = httpClient.PostAsync(urlBuilder.Uri.AbsoluteUri, new StringContent(jsonData, Encoding.UTF8, "application/json")).Result;
+            if (!response.IsSuccessStatusCode)
             {
-                if (role.Property("Usernames").Value.Values<string>().Contains(username))
-                    userRoles.Add(role.Property("Role").Value.Value<string>());
+                var msg = response.Content.ReadAsStringAsync().Result;
+                throw new Exception(String.Format("HTTP Failure {0} - {1} : {2}", response.StatusCode, response.ReasonPhrase, msg));
             }
+
+            var json = response.Content.ReadAsStringAsync().Result;
+            var rolesList = JArray.Parse(json);
+            var userRoles = rolesList.Values<string>();
 
             return userRoles;
         }
@@ -159,66 +161,49 @@ namespace SSRS.OpenIDConnect.Security.PE
         /// <summary>
         /// Validates a User
         /// </summary>
-        /// <param name="user"></param>
+        /// <param name="username"></param>
         /// <returns></returns>
-        public bool IsUserValid(string user)
+        public bool IsUserValid(string username)
         {
-            // Create a Very Standard Cache Value
-            var userCacheID = String.Format(CACHE_PEUSER, user.ToLower());
+            // Default to False
+            bool hasMatch = false;
 
-            if (!MemoryCache.Default.Contains(userCacheID))
+            // Call the PE API
+            var httpClient = new HttpClient();
+            var token = GetApiToken();
+            httpClient.SetBearerToken(token.AccessToken);
+            httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+            var urlBuilder = new UriBuilder(m_peAppUrl);
+            urlBuilder.Path += "api/SSRS/FindUser";
+            urlBuilder.Query = null;
+
+            // Build a Request
+            var jsonData = JValue.CreateString(username).ToString(Newtonsoft.Json.Formatting.None);
+
+            // Execute the API
+            var response = httpClient.PostAsync(urlBuilder.Uri.AbsoluteUri, new StringContent(jsonData, Encoding.UTF8, "application/json")).Result;
+
+            // Interpret the Response and cache all results
+            if (response.IsSuccessStatusCode && response.Content.Headers.ContentLength > 0)
             {
-                // Default to False
-                bool hasMatch = false;
-
-                // Call the PE API
-                var httpClient = new HttpClient();
-                var token = GetApiToken();
-                httpClient.SetBearerToken(token.AccessToken);
-                httpClient.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-
-                var urlBuilder = new UriBuilder(m_peAppUrl);
-                urlBuilder.Path += "api/Security/FindUsers";
-                urlBuilder.Query = null;
-
-                // Build a Request
-                StringContent content = new StringContent(
-                    new JObject(
-                        new JProperty("MaxResults", 10),
-                        new JProperty("Search", user)).ToString(Newtonsoft.Json.Formatting.None),
-                    Encoding.UTF8, "application/json");
-
-                // Execute the API
-                var response = httpClient.PostAsync(urlBuilder.Uri.AbsoluteUri, content).Result;
-
-                // Interpret the Response and cache all results
-                if (response.Content.Headers.ContentLength > 0)
+                var json = response.Content.ReadAsStringAsync().Result;
+                if (json.Equals("null", StringComparison.OrdinalIgnoreCase))
+                    hasMatch = false;
+                else
                 {
-                    var json = response.Content.ReadAsStringAsync().Result;
-                    var matches = JArray.Parse(json);
-                    foreach(JObject match in matches)
+                    var user = JObject.Parse(json);
+                    var staffUser = user.Property("StaffUser").Value.Value<string>();
+                    // If this user matches, set the result
+                    if (staffUser.Equals(username, StringComparison.OrdinalIgnoreCase))
                     {
-                        var resultLogin = match.Property("StaffUser").Value.Value<string>();
-                        if (!String.IsNullOrWhiteSpace(resultLogin))
-                        {
-                            var resultCacheID = String.Format(CACHE_PEUSER, resultLogin.ToLower());
-                            MemoryCache.Default.Add(resultCacheID, match, DateTimeOffset.Now.AddHours(1));
-
-                            // If this user matches, set the result
-                            if (resultLogin.Equals(user, StringComparison.OrdinalIgnoreCase))
-                            {
-                                hasMatch = true;
-                            }
-                        }
+                        hasMatch = true;
                     }
                 }
-
-                // Return the Result of the API Call
-                return hasMatch;
             }
 
-            // User is in Cache
-            return true;
+            // Return the Result of the API Call
+            return hasMatch;
         }
 
         /// <summary>
