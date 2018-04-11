@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F9ACAA61-EC47-47DC-8592-64C79E3B309F}</ProjectGuid>
+    <ProjectGuid>{0FE570FA-78EC-4BE4-9282-67EB64C201EE}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SSRS.OpenIDConnect.Security</RootNamespace>
@@ -47,7 +47,7 @@
     </Reference>
     <Reference Include="Microsoft.ReportingServices.Interfaces, Version=13.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Program Files\Microsoft SQL Server\MSRS13.SSRS\Reporting Services\ReportServer\bin\Microsoft.ReportingServices.Interfaces.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files\Microsoft SQL Server Reporting Services\SSRS\ReportServer\bin\Microsoft.ReportingServices.Interfaces.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Newtonsoft.Json.11.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>

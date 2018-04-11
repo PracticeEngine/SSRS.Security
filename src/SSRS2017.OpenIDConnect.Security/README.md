@@ -1,4 +1,4 @@
-# SSRS.Security
+# SSRS.Security for SQL Reporting Services 2017
 
 SQL Server Reporting Services Security Package
 
@@ -47,22 +47,19 @@ Set these values in appsettings.json:
 }
 ```
 
-## SQL Server 2016 - Custom PE Authentication Installation
+## SQL Server 2017 - Custom PE Authentication Installation
 
-Installing the Custom Authentication requires several manual steps.  Please follow these instructions carefully.  Please note these are only for SSRS 2016.
-
-Important Notes:
-
-* Install SQL Server 2016 SP1 with the latest Cumulative Update - without CU2 or higher, [this issue](https://support.microsoft.com/en-us/help/4013248/fix-user-authentication-failure-in-ssrs-2016-due-to-report-server-web) prevents reports from opening properly on first install.
+Installing the Custom Authentication requires several manual steps.  Please follow these instructions carefully.  Please note these are only for SSRS 2017.
 
 ### Copy Files
 
 1. Install and Configure Reporting Services 2016 (Normal Way)
 1. Verify Services are working (connect to Instance)
-1. Identify the Instance Source Directory (e.g. C:\Program Files\Microsoft SQL Server\MSRS13.SSRS\Reporting Services)
+1. Identify the Instance Source Directory (e.g. C:\Program Files\Microsoft SQL Server Reporting Services\SSRS)
 1. Copy the files from the BinDeploy.zip included here to both of the following subdirectories of the instance:
     1. \ReportServer\bin
-    1. \RSWebApp\bin
+    1. \Portal\bin
+    1. \PowerBI\bin (optional - if using PowerBI Report Server)
 1. Copy the oidclogon.aspx file
     1. Edit the file - set the Authority to the AuthUrl
     1. Place it in the \ReportServer directory
@@ -112,6 +109,12 @@ Edit the file, replacing any existing &lt;Authentication&gt; &lt;Security&gt; an
 </Authentication>
 ```
 
+Add the following directly within the &lt;Configuration&gt; element
+
+```xml
+<MachineKey ValidationKey="{your-generated-validation-key}" DecryptionKey="{your-generated-decryption-key}" Validation="AES" Decryption="AES" />
+```
+
 Add the following within the &lt;UI&gt; element
 
 ```xml
@@ -152,7 +155,7 @@ Now add all these new sections immediately after that section.  Make sure you ad
 <IMembershipCondition 
         class="UrlMembershipCondition"
         version="1"
-        Url="C:\Program Files\Microsoft SQL Server\MSRS13.SSRS\Reporting Services\ReportServer\bin\SSRS.OpenIDConnect.Security.dll"/>
+        Url="C:\Program Files\Microsoft SQL Server Reporting Services\SSRS\ReportServer\bin\SSRS.OpenIDConnect.Security.dll"/>
 </CodeGroup>
 <CodeGroup
         class="UnionCodeGroup"
@@ -163,7 +166,18 @@ Now add all these new sections immediately after that section.  Make sure you ad
 <IMembershipCondition 
         class="UrlMembershipCondition"
         version="1"
-        Url="C:\Program Files\Microsoft SQL Server\MSRS13.SSRS\Reporting Services\ReportServer\bin\IdentityModel.dll"/>
+        Url="C:\Program Files\Microsoft SQL Server Reporting Services\SSRS\ReportServer\bin\IdentityModel.dll"/>
+</CodeGroup>
+<CodeGroup
+        class="UnionCodeGroup"
+        version="1"
+        Name="SecurityExtensionCodeGroup"
+        Description="Code group for the sample security extension"
+        PermissionSetName="FullTrust">
+<IMembershipCondition 
+        class="UrlMembershipCondition"
+        version="1"
+        Url="C:\Program Files\Microsoft SQL Server Reporting Services\SSRS\bin\Newtonsoft.Json.v11.dll"/>
 </CodeGroup>
 <CodeGroup
         class="UnionCodeGroup"
@@ -174,7 +188,7 @@ Now add all these new sections immediately after that section.  Make sure you ad
 <IMembershipCondition 
         class="UrlMembershipCondition"
         version="1"
-        Url="C:\Program Files\Microsoft SQL Server\MSRS13.SSRS\Reporting Services\ReportServer\bin\Newtonsoft.Json.dll"/>
+        Url="C:\Program Files\Microsoft SQL Server Reporting Services\SSRS\ReportServer\bin\System.IdentityModel.Tokens.Jwt.dll"/>
 </CodeGroup>
 <CodeGroup
         class="UnionCodeGroup"
@@ -185,7 +199,7 @@ Now add all these new sections immediately after that section.  Make sure you ad
 <IMembershipCondition 
         class="UrlMembershipCondition"
         version="1"
-        Url="C:\Program Files\Microsoft SQL Server\MSRS13.SSRS\Reporting Services\ReportServer\bin\System.IdentityModel.Tokens.Jwt.dll"/>
+        Url="C:\Program Files\Microsoft SQL Server Reporting Services\SSRS\ReportServer\bin\Microsoft.IdentityModel.Logging.dll"/>
 </CodeGroup>
 <CodeGroup
         class="UnionCodeGroup"
@@ -196,7 +210,7 @@ Now add all these new sections immediately after that section.  Make sure you ad
 <IMembershipCondition 
         class="UrlMembershipCondition"
         version="1"
-        Url="C:\Program Files\Microsoft SQL Server\MSRS13.SSRS\Reporting Services\ReportServer\bin\Microsoft.IdentityModel.Logging.dll"/>
+        Url="C:\Program Files\Microsoft SQL Server Reporting Services\SSRS\ReportServer\bin\Microsoft.IdentityModel.Protocols.dll"/>
 </CodeGroup>
 <CodeGroup
         class="UnionCodeGroup"
@@ -207,7 +221,7 @@ Now add all these new sections immediately after that section.  Make sure you ad
 <IMembershipCondition 
         class="UrlMembershipCondition"
         version="1"
-        Url="C:\Program Files\Microsoft SQL Server\MSRS13.SSRS\Reporting Services\ReportServer\bin\Microsoft.IdentityModel.Protocols.dll"/>
+        Url="C:\Program Files\Microsoft SQL Server Reporting Services\SSRS\ReportServer\bin\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll"/>
 </CodeGroup>
 <CodeGroup
         class="UnionCodeGroup"
@@ -218,18 +232,7 @@ Now add all these new sections immediately after that section.  Make sure you ad
 <IMembershipCondition 
         class="UrlMembershipCondition"
         version="1"
-        Url="C:\Program Files\Microsoft SQL Server\MSRS13.SSRS\Reporting Services\ReportServer\bin\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll"/>
-</CodeGroup>
-<CodeGroup
-        class="UnionCodeGroup"
-        version="1"
-        Name="SecurityExtensionCodeGroup" 
-        Description="Code group for the sample security extension"
-        PermissionSetName="FullTrust">
-<IMembershipCondition 
-        class="UrlMembershipCondition"
-        version="1"
-        Url="C:\Program Files\Microsoft SQL Server\MSRS13.SSRS\Reporting Services\ReportServer\bin\Microsoft.IdentityModel.Tokens.dll"/>
+        Url="C:\Program Files\Microsoft SQL Server Reporting Services\SSRS\ReportServer\bin\Microsoft.IdentityModel.Tokens.dll"/>
 </CodeGroup>
 ```
 
@@ -240,8 +243,6 @@ Set all the following values within the &lt;system.web&gt; element, replacing th
 ```xml
 <configuration>
   <system.web>
-    ...
-    <machineKey validationKey="{generated-validation-key}" decryptionKey="{generated-decryption-key}" validation="AES" decryption="AES" />
     ...
     <authentication mode="Forms">
       <forms loginUrl="oidclogon.aspx" name="PESSRS" timeout="60" path="/"></forms>
@@ -260,29 +261,29 @@ Set all the following values within the &lt;system.web&gt; element, replacing th
 Within the &lt;assemblyBinding&gt; element, add the following &lt;dependentAssembly&gt; element:
 
 ```xml
-<dependentAssembly>
-    <assemblyIdentity name="Newtonsoft.Json" publicKeyToken="30ad4fe6b2a6aeed" culture="neutral" />
-    <bindingRedirect oldVersion="9.0.0.0-11.0.0.0" newVersion="11.0.0.0" />
-</dependentAssembly>
+      <dependentAssembly>
+        <assemblyIdentity name="Newtonsoft.Json" publicKeyToken="30ad4fe6b2a6aeed" culture="neutral" />
+        <bindingRedirect oldVersion="0.0.0.0-6.0.0.0" newVersion="6.0.8.0" />
+        <bindingRedirect oldVersion="9.0.0.0-11.0.0.0" newVersion="11.0.0.0" />
+        <codeBase version="6.0.8.18111" href="Newtonsoft.Json.dll" />
+        <codeBase version="11.0.1.21818" href="Newtonsoft.Json.v11.dll" />
+      </dependentAssembly>
+    </assemblyBinding>
 ```
 
-### Edit the \RSWebApp\Microsoft.ReportingServices.Portal.WebHost.exe.config file
+### Edit the \RSWebApp\RSPortal.exe.config file
 
-Within the WebHost Configuration File, we must make 2 modifications.
-
-Add a &lt;system.web&gt; element within &lt;configuration&gt; replacing the validation and decryption keys with your generated values so that both applications share the same keys.
-
-```xml
-<system.web>
-  <machineKey validationKey="{generated-validation-key}" decryptionKey="{generated-decryption-key}" validation="AES" decryption="AES" />
-</system.web>
-```
+Within the WebHost Configuration File, we must make 1 modification.
 
 Within the &lt;assemblyBinding&gt; element, add the following &lt;dependentAssembly&gt; element:
 
 ```xml
-<dependentAssembly>
-    <assemblyIdentity name="Newtonsoft.Json" publicKeyToken="30ad4fe6b2a6aeed" culture="neutral" />
-    <bindingRedirect oldVersion="9.0.0.0-11.0.0.0" newVersion="11.0.0.0" />
-</dependentAssembly>
+      <dependentAssembly>
+        <assemblyIdentity name="Newtonsoft.Json" publicKeyToken="30ad4fe6b2a6aeed" culture="neutral" />
+        <bindingRedirect oldVersion="0.0.0.0-6.0.0.0" newVersion="6.0.8.0" />
+        <bindingRedirect oldVersion="9.0.0.0-11.0.0.0" newVersion="11.0.0.0" />
+        <codeBase version="6.0.8.18111" href="Newtonsoft.Json.dll" />
+        <codeBase version="11.0.1.21818" href="Newtonsoft.Json.v11.dll" />
+      </dependentAssembly>
+    </assemblyBinding>
 ```

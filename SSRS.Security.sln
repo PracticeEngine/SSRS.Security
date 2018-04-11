@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SSRS2016.OpenIDConnect.Secu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SSRS2016.OpenIDConnect.Security.Tests", "test\SSRS2016.OpenIDConnect.Security.Tests\SSRS2016.OpenIDConnect.Security.Tests.csproj", "{71657227-1D08-42C6-88AD-AAD05BDF0BBA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SSRS2017", "SSRS2017", "{5E9DA7AB-303B-4134-ACF3-A7EE0BE87CD0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SSRS2017.OpenIDConnect.Security", "src\SSRS2017.OpenIDConnect.Security\SSRS2017.OpenIDConnect.Security.csproj", "{0FE570FA-78EC-4BE4-9282-67EB64C201EE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,6 +27,10 @@ Global
 		{71657227-1D08-42C6-88AD-AAD05BDF0BBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71657227-1D08-42C6-88AD-AAD05BDF0BBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71657227-1D08-42C6-88AD-AAD05BDF0BBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FE570FA-78EC-4BE4-9282-67EB64C201EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FE570FA-78EC-4BE4-9282-67EB64C201EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FE570FA-78EC-4BE4-9282-67EB64C201EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FE570FA-78EC-4BE4-9282-67EB64C201EE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -30,6 +38,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{F9ACAA61-EC47-47DC-8592-64C79E3B309F} = {EF398FF3-ED07-48FC-AFBC-5CC3AC0F6FCC}
 		{71657227-1D08-42C6-88AD-AAD05BDF0BBA} = {EF398FF3-ED07-48FC-AFBC-5CC3AC0F6FCC}
+		{0FE570FA-78EC-4BE4-9282-67EB64C201EE} = {5E9DA7AB-303B-4134-ACF3-A7EE0BE87CD0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A067B11E-804C-4700-B7FA-7C34045DBCBD}
