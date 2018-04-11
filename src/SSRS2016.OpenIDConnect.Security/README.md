@@ -2,6 +2,8 @@
 
 SQL Server Reporting Services Security Package
 
+Download [Zip of /bin files](./SSRS2016.zip) and the [Oidclogon.aspx](./OidcLogon.aspx) files you need to install.
+
 ## Configuration Settings
 
 The configuration settings are needed needed:
