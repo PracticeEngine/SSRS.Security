@@ -51,6 +51,8 @@ Set these values in appsettings.json:
 
 Installing the Custom Authentication requires several manual steps.  Please follow these instructions carefully.  Please note these are only for SSRS 2017.
 
+**Important Note** There is a bug in SSRS 2017 - such that the call to SetConfiguration for an Authentication Extension does not pass the correct value.  It passes the innerText of the Configuration, instead of the full XML.  Code has been added to allow the integration to work until a permanent fix is available from Microsoft. This requires append a (pipe) '|' symbol to the end of all settings in the Authentication section.  This is noted further down the page at the correct spot as well.
+
 ### Copy Files
 
 1. Install and Configure Reporting Services 2016 (Normal Way)
@@ -93,15 +95,21 @@ Edit the file, replacing any existing &lt;Authentication&gt; &lt;Security&gt; an
 
 *When updating the &lt;Security&gt; section - the username provided is the 'root' administrator, and has unlimited and unrestricted access. Use this immediately after configuration to set all other necessary permissions*
 
+**IMPORTANT WORK-AROUND** 
+
+1. Always list these in the exact same order
+1. Currently you need to add a | to the end of each value (except the last one) in the &lt;Authentication&gt; section here.  That includes: &lt;AuthUrl&gt;, &lt;PEUrl&gt;, &lt;PEAppId&gt;, &lt;PEAppKey&gt;
+1. DO NOT add pipe in the value for &lt;SSRSIntegrationSecret&gt; which must also be last
+
 ```xml
 <Authentication>
     <Extension Name="Forms" Type="SSRS.OpenIDConnect.Security.SSRSAuthentication,SSRS.OpenIDConnect.Security">
         <Configuration>
             <Authentication>
-                <AuthUrl>{your-auth-url-NO-trailing-slash}</AuthUrl>
-                <PEUrl>{your-pe-url-with-trailing-slash}</PEUrl>
-                <PEAppId>{your-app-id}</PEAppId>
-                <PEAppKey>{your-app-key}</PEAppKey>
+                <AuthUrl>{your-auth-url-NO-trailing-slash}|</AuthUrl>
+                <PEUrl>{your-pe-url-with-trailing-slash}|</PEUrl>
+                <PEAppId>{your-app-id}|</PEAppId>
+                <PEAppKey>{your-app-key}|</PEAppKey>
                 <SSRSIntegrationSecret>{your-ssrs-secret}</SSRSIntegrationSecret>
             </Authentication>
         </Configuration>
@@ -146,7 +154,7 @@ Find the &lt;CodeGroup&gt; section with Url="$CodeGen$/*" like this:
 Now add all these new sections immediately after that section.  Make sure you adjust the path on all entries to match the installation path for your instance.
 
 ```xml
-<CodeGroup
+CodeGroup
         class="UnionCodeGroup"
         version="1"
         Name="SecurityExtensionCodeGroup" 
@@ -171,13 +179,13 @@ Now add all these new sections immediately after that section.  Make sure you ad
 <CodeGroup
         class="UnionCodeGroup"
         version="1"
-        Name="SecurityExtensionCodeGroup"
+        Name="SecurityExtensionCodeGroup" 
         Description="Code group for the sample security extension"
         PermissionSetName="FullTrust">
 <IMembershipCondition 
         class="UrlMembershipCondition"
         version="1"
-        Url="C:\Program Files\Microsoft SQL Server Reporting Services\SSRS\bin\Newtonsoft.Json.v11.dll"/>
+        Url="C:\Program Files\Microsoft SQL Server Reporting Services\SSRS\ReportServer\bin\Newtonsoft.Json.dll"/>
 </CodeGroup>
 <CodeGroup
         class="UnionCodeGroup"
@@ -261,14 +269,10 @@ Set all the following values within the &lt;system.web&gt; element, replacing th
 Within the &lt;assemblyBinding&gt; element, add the following &lt;dependentAssembly&gt; element:
 
 ```xml
-      <dependentAssembly>
+<dependentAssembly>
         <assemblyIdentity name="Newtonsoft.Json" publicKeyToken="30ad4fe6b2a6aeed" culture="neutral" />
-        <bindingRedirect oldVersion="0.0.0.0-6.0.0.0" newVersion="6.0.8.0" />
         <bindingRedirect oldVersion="9.0.0.0-11.0.0.0" newVersion="11.0.0.0" />
-        <codeBase version="6.0.8.18111" href="Newtonsoft.Json.dll" />
-        <codeBase version="11.0.1.21818" href="Newtonsoft.Json.v11.dll" />
-      </dependentAssembly>
-    </assemblyBinding>
+</dependentAssembly>
 ```
 
 ### Edit the \RSWebApp\RSPortal.exe.config file
@@ -278,12 +282,8 @@ Within the WebHost Configuration File, we must make 1 modification.
 Within the &lt;assemblyBinding&gt; element, add the following &lt;dependentAssembly&gt; element:
 
 ```xml
-      <dependentAssembly>
+<dependentAssembly>
         <assemblyIdentity name="Newtonsoft.Json" publicKeyToken="30ad4fe6b2a6aeed" culture="neutral" />
-        <bindingRedirect oldVersion="0.0.0.0-6.0.0.0" newVersion="6.0.8.0" />
         <bindingRedirect oldVersion="9.0.0.0-11.0.0.0" newVersion="11.0.0.0" />
-        <codeBase version="6.0.8.18111" href="Newtonsoft.Json.dll" />
-        <codeBase version="11.0.1.21818" href="Newtonsoft.Json.v11.dll" />
-      </dependentAssembly>
-    </assemblyBinding>
+</dependentAssembly>
 ```

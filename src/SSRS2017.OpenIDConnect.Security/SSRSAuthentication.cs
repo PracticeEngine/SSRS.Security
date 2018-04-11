@@ -168,44 +168,68 @@ namespace SSRS.OpenIDConnect.Security
         /// <param name="configuration"></param>
         public void SetConfiguration(string configuration)
         {
-            // Retrieve admin user and password from the config settings
-            // and verify
-            XmlDocument doc = new XmlDocument();
-            doc.LoadXml(configuration);
-            if (doc.DocumentElement.Name == "Authentication")
+            /* This method has a nasty bug - the RSPortal.exe passes the innerText value instead of the innerXML value.
+             * This means sometimes we are passed a string of the values, but no XML formatting
+             * In order to make heads or tails of hte values, we need to delimit the values, so we can sort out the configured values.
+             * See bug report here: https://github.com/Microsoft/Reporting-Services/issues/81 for further details.
+             * To get around this, we will just append a (pipe) symbol '|' to the end of each setting. This should suffice until a permanent fix is available
+             */
+
+            try
             {
-                foreach (XmlNode child in doc.DocumentElement.ChildNodes)
+
+
+                // Retrieve admin user and password from the config settings
+                // and verify
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(configuration);
+                if (doc.DocumentElement.Name == "Authentication")
                 {
-                    if (child.Name == "PEUrl")
+                    foreach (XmlNode child in doc.DocumentElement.ChildNodes)
                     {
-                        m_peAppUrl = child.InnerText;
-                    }
-                    else if (child.Name == "AuthUrl")
-                    {
-                        m_oidcAuthority = child.InnerText;
-                    }
-                    else if (child.Name == "PEAppId")
-                    {
-                        m_peAppID = child.InnerText;
-                    }
-                    else if (child.Name == "PEAppKey")
-                    {
-                        m_peAppKey = child.InnerText;
-                    }
-                    else if (child.Name == "SSRSIntegrationSecret")
-                    {
-                        m_peIntegrationSecret = child.InnerText;
-                    }
-                    else
-                    {
-                        throw new Exception(string.Format(CultureInfo.InvariantCulture,
-                          "Authentication Contained a Node that was unexpected: {0}", child.Name));
+                        if (child.Name == "PEUrl")
+                        {
+                            m_peAppUrl = child.InnerText.Replace("|", "");
+                        }
+                        else if (child.Name == "AuthUrl")
+                        {
+                            m_oidcAuthority = child.InnerText.Replace("|", "");
+                        }
+                        else if (child.Name == "PEAppId")
+                        {
+                            m_peAppID = child.InnerText.Replace("|", "");
+                        }
+                        else if (child.Name == "PEAppKey")
+                        {
+                            m_peAppKey = child.InnerText.Replace("|", "");
+                        }
+                        else if (child.Name == "SSRSIntegrationSecret")
+                        {
+                            m_peIntegrationSecret = ""; // child.InnerText.Replace("|", "");
+                        }
+                        else
+                        {
+                            throw new Exception(string.Format(CultureInfo.InvariantCulture,
+                              "Authentication Contained a Node that was unexpected: {0}", child.Name));
+                        }
                     }
                 }
+                else
+                    throw new Exception(string.Format(CultureInfo.InvariantCulture,
+                       "Missing Authentication, Got this Instead: {0}", doc.DocumentElement.Name));
             }
-            else
-                throw new Exception(string.Format(CultureInfo.InvariantCulture,
-                   "Missing Authentication, Got this Instead: {0}", doc.DocumentElement.Name));
+            catch (Exception ex)
+            {
+                var split = configuration.Split('|');
+                if (split.Length != 5)
+                    throw new Exception(string.Format(CultureInfo.InvariantCulture,
+                       "Bad Configuration, Got this: {0}", configuration));
+                m_oidcAuthority = split[0];
+                m_peAppUrl = split[1];
+                m_peAppID = split[2];
+                m_peAppKey = split[3];
+                m_peIntegrationSecret = ""; //split[4];
+            }
         }
 
         /// <summary>

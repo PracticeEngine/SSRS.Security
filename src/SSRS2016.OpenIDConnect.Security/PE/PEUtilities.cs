@@ -56,7 +56,7 @@ namespace SSRS.OpenIDConnect.Security.PE
             { 
                 var disco = DiscoveryClient.GetAsync(m_peAuthUrl).Result;
                 if (disco.IsError)
-                    throw new NullReferenceException("OIDC Discovery Failed!  Is the Authentication App running?");
+                    throw new Exception("OIDC Discovery Failed!  Is the Authentication App running?", disco.Exception);
 
                 MemoryCache.Default.Add(CACHE_DISCO, disco, DateTimeOffset.Now.AddHours(2));
             }
