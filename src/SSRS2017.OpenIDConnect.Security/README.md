@@ -62,6 +62,7 @@ Installing the Custom Authentication requires several manual steps.  Please foll
 1. Identify the Instance Source Directory (e.g. C:\Program Files\Microsoft SQL Server Reporting Services\SSRS)
 1. Copy the files from the BinDeploy.zip included here to both of the following subdirectories of the instance:
     1. \ReportServer\bin
+    1. Create the \Portal\bin directory
     1. \Portal\bin
     1. \PowerBI\bin (optional - if using PowerBI Report Server)
 1. Copy the oidclogon.aspx file
