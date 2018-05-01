@@ -57,7 +57,7 @@ Installing the Custom Authentication requires several manual steps.  Please foll
 
 ### Copy Files
 
-1. Install and Configure Reporting Services 2016 (Normal Way)
+1. Install and Configure Reporting Services 2017 (Normal Way)
 1. Verify Services are working (connect to Instance)
 1. Identify the Instance Source Directory (e.g. C:\Program Files\Microsoft SQL Server Reporting Services\SSRS)
 1. Copy the files from the BinDeploy.zip included here to both of the following subdirectories of the instance:
