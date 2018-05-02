@@ -21,7 +21,7 @@ Here are the steps to identify or create all the settings you will need in subse
     1. Auth Url (typically 'https://server/auth')
     1. PE Url (typically 'https://server/PE/')
 1. Create an App Login & ID
-    1. Create a new login to a group only with API_Security permission
+    1. Create a new login to a group only with API_SSRS permission
     1. Create an App ID & App Key on the API Authentication page within PE for that login
 1. Generate a Random secret (any string you make up or randomly generate is fine)
 1. Generate a Machine Key and Decryption Key using IIS
