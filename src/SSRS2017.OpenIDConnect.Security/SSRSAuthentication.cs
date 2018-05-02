@@ -205,7 +205,7 @@ namespace SSRS.OpenIDConnect.Security
                         }
                         else if (child.Name == "SSRSIntegrationSecret")
                         {
-                            m_peIntegrationSecret = ""; // child.InnerText.Replace("|", "");
+                            m_peIntegrationSecret = child.InnerText.Replace("|", "");
                         }
                         else
                         {
@@ -218,7 +218,7 @@ namespace SSRS.OpenIDConnect.Security
                     throw new Exception(string.Format(CultureInfo.InvariantCulture,
                        "Missing Authentication, Got this Instead: {0}", doc.DocumentElement.Name));
             }
-            catch (Exception ex)
+            catch (XmlException ex)
             {
                 var split = configuration.Split('|');
                 if (split.Length != 5)
@@ -228,7 +228,7 @@ namespace SSRS.OpenIDConnect.Security
                 m_peAppUrl = split[1];
                 m_peAppID = split[2];
                 m_peAppKey = split[3];
-                m_peIntegrationSecret = ""; //split[4];
+                m_peIntegrationSecret = split[4];
             }
         }
 
