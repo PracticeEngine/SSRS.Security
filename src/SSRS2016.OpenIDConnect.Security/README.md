@@ -239,6 +239,8 @@ Now add all these new sections immediately after that section.  Make sure you ad
 
 Set all the following values within the &lt;system.web&gt; element, replacing the validation and decryption keys with your generated values.
 
+IMPORTANT: Set the domain to the value your server is hosted at.
+
 ```xml
 <configuration>
   <system.web>
@@ -246,7 +248,8 @@ Set all the following values within the &lt;system.web&gt; element, replacing th
     <machineKey validationKey="{generated-validation-key}" decryptionKey="{generated-decryption-key}" validation="AES" decryption="AES" />
     ...
     <authentication mode="Forms">
-      <forms loginUrl="oidclogon.aspx" name="PESSRS" timeout="60" path="/"></forms>
+      <forms loginUrl="oidclogon.aspx" name="PESSRS" timeout="480" slidingExpiration="true" path="/" domain="server.domain">
+      </forms>
     </authentication>
     ...
     <authorization> 
