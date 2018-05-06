@@ -1,9 +1,6 @@
 ﻿using SSRS.OpenIDConnect.Security.OIDC;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Web.Security;
 
 namespace SSRS.OpenIDConnect.Security
@@ -53,8 +50,7 @@ namespace SSRS.OpenIDConnect.Security
 
                 // Validate then set Auth cookie and redirect
                 var principal = oidcUtils.ValidateIdentityToken(idToken);
-                FormsAuthentication.SetAuthCookie(
-                  principal.Identity.Name, false);
+                FormsAuthentication.SetAuthCookie(principal.Identity.Name, false);
                 Response.Redirect(origUrl);
             }
         }
