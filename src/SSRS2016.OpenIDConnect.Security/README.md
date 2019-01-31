@@ -18,7 +18,7 @@ The configuration settings are needed needed:
 Here are the steps to identify or create all the settings you will need in subsequent sections.
 
 1. Identify the following Settings for your Environment:
-    1. Auth Url (typically 'https://server/auth')
+    1. Auth Url (typically 'https://server/auth') **Note the URL needs to be in lower case.**
     1. PE Url (typically 'https://server/PE/')
 1. Create an App Login & ID
     1. Create a new login to a group only with API_SSRS permission
@@ -239,8 +239,6 @@ Now add all these new sections immediately after that section.  Make sure you ad
 
 Set all the following values within the &lt;system.web&gt; element, replacing the validation and decryption keys with your generated values.
 
-IMPORTANT: Set the domain to the value your server is hosted at.
-
 ```xml
 <configuration>
   <system.web>
@@ -248,7 +246,7 @@ IMPORTANT: Set the domain to the value your server is hosted at.
     <machineKey validationKey="{generated-validation-key}" decryptionKey="{generated-decryption-key}" validation="AES" decryption="AES" />
     ...
     <authentication mode="Forms">
-      <forms loginUrl="oidclogon.aspx" name="PESSRS" timeout="480" slidingExpiration="true" path="/" domain="server.domain">
+      <forms loginUrl="oidclogon.aspx" name="PESSRS" timeout="480" slidingExpiration="true" path="/">
       </forms>
     </authentication>
     ...
